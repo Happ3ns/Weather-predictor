@@ -1,8 +1,10 @@
 {
   "mcpServers": {
     "weather-predictor": {
-      "command": "python3",
-      "args": ["/absolute/path/to/your/project/mcp_server.py"]
+      "command": "python",
+      "args": [
+        "C:\\Weather-predictor\\mcp_server.py"
+      ]
     }
   }
 }
