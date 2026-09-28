@@ -70,6 +70,19 @@ The column-matching logic (`DATA.md`) is written from CPCB's documented export f
 - Accuracy depends heavily on how much historical data you provide — CPCB recommends at least several months for meaningful results.
 - This is an educational project, not an official forecast — always treat the "This is an educational estimate, not an official CPCB forecast" line in the output as literal.
 
-## License
+## How AQI is computed
 
-MIT — use, modify, and extend freely.
+The model's target variable is an AQI category. Real CPCB AQI is the **maximum sub-index across six pollutants** (PM2.5, PM10, NO2, SO2, CO, O3), using a piecewise linear breakpoint table per pollutant.
+
+For this project, AQI is driven by **PM2.5 alone**. This is a deliberate simplification: on high-pollution days in Kanpur, PM2.5 almost always drives the maximum sub-index, so the approximation is close on the days that matter most. The breakpoints match CPCB's published PM2.5 sub-index table:
+
+| PM2.5 (µg/m³) | AQI category   |
+|---------------|----------------|
+| 0–30          | Good           |
+| 31–60         | Satisfactory   |
+| 61–90         | Moderate       |
+| 91–120        | Poor           |
+| 121–250       | Very Poor      |
+| 251+          | Severe         |
+
+Days when PM10 or NO2 spikes without a corresponding PM2.5 spike will be miscategorised by this simplification. A full multi-pollutant implementation would take the maximum sub-index across all six pollutants.
