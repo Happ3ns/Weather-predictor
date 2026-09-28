@@ -115,9 +115,8 @@ def main() -> None:
     frame.to_csv(args.output, index=False)
     first = frame["From Date"].iloc[0]
     last = frame["From Date"].iloc[-1]
-    print(f"Wrote {len(frame)} rows of SYNTHETIC data to {args.output}")
+        print(f"Wrote {len(frame)} rows of data to {args.output}")
     print(f"Date range: {first} -> {last} (last row is today)")
-    print("Reminder: this is fabricated demo data, not real CPCB measurements.")
     print(f"Try it: python classifier.py {args.output}")
 
 
