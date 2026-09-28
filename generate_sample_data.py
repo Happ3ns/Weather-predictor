@@ -9,23 +9,31 @@ any actual CPCB reading. Do not use this data, or any model trained on it,
 to draw real conclusions about Kanpur's actual air quality.
 
 Usage:
-    python generate_sample_data.py [output_path] [--days N]
+    python generate_sample_data.py [output_path] [--days N] [--seed S]
 """
 
 from __future__ import annotations
 
 import argparse
+import time
 from pathlib import Path
 
 import numpy as np
 import pandas as pd
 
-RNG_SEED = 42
 
+def synthetic_daily_frame(days: int, seed: int | None = None) -> pd.DataFrame:
+    # If no seed is provided, derive one from the current time so every run
+    # produces fresh values. Pass --seed N for reproducible output.
+    if seed is None:
+        seed = int(time.time_ns() % (2**32))
 
-def synthetic_daily_frame(days: int, seed: int = RNG_SEED) -> pd.DataFrame:
     rng = np.random.default_rng(seed)
-    dates = pd.date_range("2023-01-01", periods=days, freq="D")
+
+    # End the series on today's date so the "latest available day" printed by
+    # classifier.py is current. The first row is (days - 1) days before today.
+    end_date = pd.Timestamp.today().normalize()
+    dates = pd.date_range(end=end_date, periods=days, freq="D")
 
     day_of_year = dates.dayofyear.to_numpy()
     # Winter (low day-of-year / high day-of-year, i.e. Dec-Feb) biased worse;
@@ -92,11 +100,23 @@ def main() -> None:
         default=400,
         help="Number of consecutive synthetic days to generate (default: %(default)s)",
     )
+    parser.add_argument(
+        "--seed",
+        type=int,
+        default=None,
+        help="Optional random seed for reproducible output (default: random each run)",
+    )
     args = parser.parse_args()
 
-    frame = synthetic_daily_frame(args.days)
+    # Make sure the output folder exists (matters if you pass a path with a folder).
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+
+    frame = synthetic_daily_frame(args.days, seed=args.seed)
     frame.to_csv(args.output, index=False)
+    first = frame["From Date"].iloc[0]
+    last = frame["From Date"].iloc[-1]
     print(f"Wrote {len(frame)} rows of SYNTHETIC data to {args.output}")
+    print(f"Date range: {first} -> {last} (last row is today)")
     print("Reminder: this is fabricated demo data, not real CPCB measurements.")
     print(f"Try it: python classifier.py {args.output}")
 
