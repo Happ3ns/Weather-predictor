@@ -24,6 +24,13 @@ python3 classifier.py sample_kanpur_synthetic.csv
 
 This synthetic data is for demoing the pipeline only — it uses a made-up AQI formula and random noise, not real measurements or CPCB's actual calculation. Every run of `generate_sample_data.py` says so explicitly. Don't draw real conclusions from it; use it only to confirm the code runs end-to-end.
 
+
+**Have a Vonter Parquet file?** Place it in the repo root and run:
+
+    python prepare_real_data.py
+
+This filters for Kanpur, aggregates 15-minute readings into daily averages, computes AQI from PM2.5 using the CPCB breakpoint table, and writes `kanpur_real.csv` — which you can then pass directly to `classifier.py`.
+
 ## Setup and run
 
 ```bash
