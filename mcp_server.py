@@ -18,8 +18,8 @@ mcp = FastMCP("Weather Predictor MCP")
 @mcp.tool()
 def predict_next_day_aqi(csv_path: str, city: str = "Kanpur") -> str:
     """
-    Trains a Random Forest classifier on historical CPCB data[cite: 1] 
-    and predicts the next-day AQI category for a given city[cite: 4].
+    Trains a Random Forest classifier on historical CPCB data
+    and predicts the next-day AQI category for a given city
     """
     path = Path(csv_path)
     if not path.is_file():
