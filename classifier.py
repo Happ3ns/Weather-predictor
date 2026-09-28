@@ -75,8 +75,29 @@ def aqi_category(value: float) -> str:
     return "Severe"
 
 
+def _sniff_header_row(csv_path: Path, max_scan: int = 10) -> int:
+    """CPCB exports often have title/metadata rows before the real header.
+    Find the first line that contains a recognisable date-ish column name."""
+    with open(csv_path, "r", encoding="utf-8-sig", errors="replace") as fh:
+        for index, line in enumerate(fh):
+            if index >= max_scan:
+                break
+            normalized = normalize_column_name(line)
+            if "fromdate" in normalized or "date" in normalized:
+                return index
+    return 0
+
+
 def load_daily_data(csv_path: Path, requested_city: str) -> tuple[pd.DataFrame, list[str]]:
-    raw = pd.read_csv(csv_path, encoding="utf-8-sig", low_memory=False)
+    header_row = _sniff_header_row(csv_path)
+    if header_row:
+        print(f"Skipping {header_row} metadata row(s) at the top of the CSV.")
+    raw = pd.read_csv(
+        csv_path,
+        encoding="utf-8-sig",
+        low_memory=False,
+        skiprows=header_row,
+    )
     date_column = find_column(raw.columns, "date")
     aqi_column = find_column(raw.columns, "aqi")
     city_column = find_column(raw.columns, "city")
