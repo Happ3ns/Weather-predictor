@@ -30,7 +30,7 @@ This synthetic data is for demoing the pipeline only — it uses a made-up AQI f
 python3 -m pip install -r requirements.txt
 
 # with real CPCB data downloaded per DATA.md:
-python3 classifier.py path/to/kanpur_pcb.csv
+python3 classifier.py kanpur_real.csv
 
 # or with generated demo data:
 python3 generate_sample_data.py
