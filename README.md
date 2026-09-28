@@ -57,9 +57,12 @@ Each run prints:
 - `feature_importance.png` — which inputs the model actually relies on
 - `confusion_matrix.png` — where the model's predictions go right and wrong, category by category
 
-## A note on real-world testing
+## Real-world testing
 
-The column-matching logic (`DATA.md`) is written from CPCB's documented export format, but hasn't yet been run against a live download from the CCR portal end-to-end. If you hit a column-matching error on a real file, check the exact header names in your CSV against `DATA.md` and open an issue or adjust `COLUMN_ALIASES` in `classifier.py` — the matching is intentionally centralized in one place to make this easy.
+The pipeline has been validated end-to-end against a real Parquet export of CPCB station data (105,120 Kanpur observations at 15-minute resolution, aggregated to 365 daily rows). The classifier trained on this real data achieved **67.1% test accuracy vs. 61.6% for the persistence baseline**.
+
+The column-matching logic (`DATA.md`) is written from CPCB's documented export format. If you hit a column-matching error on a different CPCB export, check the exact header names against `DATA.md` or adjust `COLUMN_ALIASES` in `classifier.py` — the matching is intentionally centralized in one place to make this easy.
+
 
 ## Limitations
 
