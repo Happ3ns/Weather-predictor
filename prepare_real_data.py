@@ -58,11 +58,28 @@ daily = daily.reset_index()
 daily["From Date"] = daily[ts_col].dt.strftime("%d-%m-%Y")
 daily["City"] = "Kanpur"
 
+# Convert PM2.5 (µg/m³, 24-hr avg) to CPCB AQI using official breakpoints.
+# Reference: CPCB AQI methodology (piecewise linear interpolation).
+def pm25_to_aqi(pm):
+    if pd.isna(pm):
+        return None
+    if pm <= 30:
+        return round(50 / 30 * pm)
+    if pm <= 60:
+        return round(50 + 50 / 30 * (pm - 30))
+    if pm <= 90:
+        return round(100 + 100 / 30 * (pm - 60))
+    if pm <= 120:
+        return round(200 + 100 / 30 * (pm - 90))
+    if pm <= 250:
+        return round(300 + 100 / 130 * (pm - 120))
+    return min(500, round(400 + 100 / 250 * (pm - 250)))
+
 if "AQI" not in daily.columns:
     if "PM2.5" in daily.columns:
-        daily["AQI"] = (daily["PM2.5"] * 1.5).round(0)
+        daily["AQI"] = daily["PM2.5"].apply(pm25_to_aqi)
     else:
-        raise ValueError("No AQI and no PM2.5 to build proxy from.")
+        raise ValueError("No AQI and no PM2.5 to build AQI from.")
 
 final_cols = ["From Date", "City", "PM2.5", "PM10", "NO2", "SO2", "CO", "O3",
               "Temperature", "Humidity", "Wind Speed", "AQI"]
