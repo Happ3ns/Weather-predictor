@@ -47,8 +47,8 @@ python3 classifier.py sample_kanpur_synthetic.csv
 **Windows (PowerShell):**
 
 ```powershell
-python -m pip install -r requirements.txt
-python classifier.py path\to\kanpur_pcb.csv
+cd C:\Users\91902\Documents\GitHub\Weather-predictor
+python classifier.py kanpur_real.csv
 ```
 
 Both produce identical output — the only difference is `python` vs `python3` and path separators.
