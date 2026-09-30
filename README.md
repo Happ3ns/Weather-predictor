@@ -73,6 +73,13 @@ The column-matching logic (`DATA.md`) is written from CPCB's documented export f
 
 ## Limitations
 
+The model predicts the day *after* the last row in the training data.
+If your CSV ends in December 2025, the prediction is for January 2026.
+
+To get a prediction for today's date, you need to supply recent data —
+either by downloading the latest Vonter Parquet release and re-running
+`prepare_real_data.py`, or by fetching today's readings from a live
+AQI source (not implemented in this repo).
 - Predictions are next-day only, for the city configured (`--city`, default Kanpur).
 - Accuracy depends heavily on how much historical data you provide — CPCB recommends at least several months for meaningful results.
 - This is an educational project, not an official forecast — always treat the "This is an educational estimate, not an official CPCB forecast" line in the output as literal.
