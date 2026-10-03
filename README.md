@@ -1,102 +1,45 @@
-# CPCB Next-Day AQI Classifier
+# Kanpur AQI Predictor
 
-Predicts tomorrow's Air Quality Index category for Kanpur from today's pollutant readings, using a Random Forest trained on real historical data from India's Central Pollution Control Board (CPCB).
+I wanted to know if tomorrow's air quality in Kanpur could be predicted 
+from today's pollution readings. Turns out: kind of, but not very well.
 
-![Feature importance](output/feature_importance.png)
+## What it does
 
-## Why this isn't a toy model
+Trains a Random Forest classifier on real CPCB data from Kanpur stations. 
+Predicts tomorrow's AQI category (Good, Satisfactory, Moderate, Poor, Very Poor, 
+Severe).
 
-- **Chronological train/test split** — the model is trained on earlier dates and tested on later ones, never on a random shuffle. Time-series data leaks information if you split it randomly; this avoids that.
-- **Persistence baseline included** — every run also reports the accuracy of the naive "tomorrow will look like today" guess, so the model's accuracy number means something instead of being reported in isolation.
-- **Cyclical season encoding** — day-of-year is encoded as `sin`/`cos` pairs rather than a raw 1–365 number, so December 31st and January 1st are correctly treated as adjacent instead of maximally different.
-- **Class-balanced training** — AQI categories are naturally imbalanced (Kanpur skews toward "Poor"/"Very Poor" more than "Good"), so the classifier is weighted to avoid just always predicting the majority class.
+## Results
 
-## Data
+- Model accuracy: 67.1%
+- Naive baseline ("tomorrow = today"): 61.6%
 
-This project trains on **real CPCB data only** — it does not ship a bundled dataset and will not present generated rows as real measurements. See [`DATA.md`](DATA.md) for exactly what to download and which column names are supported.
+So it beats the dumb guess by about 5 points. Not amazing. I'll explain why below.
 
-**Want to see the pipeline run before downloading real data?** Use the included generator to create a clearly-labeled synthetic CSV:
+## Why the accuracy is low
 
-```bash
-python3 generate_sample_data.py
-python3 classifier.py sample_kanpur_synthetic.csv
-```
+Two reasons I figured out while building this:
 
-This synthetic data is for demoing the pipeline only — it uses a made-up AQI formula and random noise, not real measurements or CPCB's actual calculation. Every run of `generate_sample_data.py` says so explicitly. Don't draw real conclusions from it; use it only to confirm the code runs end-to-end.
+1. **The AQI formula I used at first was wrong.** I was doing `PM2.5 × 1.5`, which 
+   underestimates high-pollution days. The real CPCB formula uses non-linear breakpoints. 
+   After I fixed this, the labels changed a lot.
 
+2. **The model only sees today's weather.** Tomorrow's wind speed and direction 
+   matter a lot for AQI, but I don't have those as inputs. Adding them would probably help.
 
-**Have a Vonter Parquet file?** Place it in the repo root and run:
+## What I'd do differently
 
-    python prepare_real_data.py
+- Add weather forecast features
+- Try an LSTM or ARIMA instead of a classifier
+- Predict the AQI number, not the category
 
-This filters for Kanpur, aggregates 15-minute readings into daily averages, computes AQI from PM2.5 using the CPCB breakpoint table, and writes `kanpur_real.csv` — which you can then pass directly to `classifier.py`.
+## How to run it
 
-## Setup and run
+1. Install dependencies: `pip install -r requirements.txt`
+2. Download the Vonter Parquet file (see DATA.md)
+3. Run `python prepare_real_data.py` to create `kanpur_real.csv`
+4. Run `python classifier.py kanpur_real.csv`
 
-```bash
-python3 -m pip install -r requirements.txt
-
-# with real CPCB data downloaded per DATA.md:
-python3 classifier.py kanpur_real.csv
-
-# or with generated demo data:
-python3 generate_sample_data.py
-python3 classifier.py sample_kanpur_synthetic.csv
-```
-
-**Windows (PowerShell):**
-
-```powershell
-cd C:\Users\91902\Documents\GitHub\Weather-predictor
-python classifier.py kanpur_real.csv
-```
-
-Both produce identical output — the only difference is `python` vs `python3` and path separators.
-
-## Output
-
-Each run prints:
-- Row counts, feature list, model accuracy, and the persistence baseline accuracy
-- A full classification report and confusion matrix
-- A prediction for the next day, based on the most recent row in your data
-
-...and saves two plots to `output/`:
-- `feature_importance.png` — which inputs the model actually relies on
-- `confusion_matrix.png` — where the model's predictions go right and wrong, category by category
-
-## Real-world testing
-
-The pipeline has been validated end-to-end against a real Parquet export of CPCB station data (105,120 Kanpur observations at 15-minute resolution, aggregated to 365 daily rows). The classifier trained on this real data achieved **67.1% test accuracy vs. 61.6% for the persistence baseline**.
-
-The column-matching logic (`DATA.md`) is written from CPCB's documented export format. If you hit a column-matching error on a different CPCB export, check the exact header names against `DATA.md` or adjust `COLUMN_ALIASES` in `classifier.py` — the matching is intentionally centralized in one place to make this easy.
-
-
-## Limitations
-
-The model predicts the day *after* the last row in the training data.
-If your CSV ends in December 2025, the prediction is for January 2026.
-
-To get a prediction for today's date, you need to supply recent data —
-either by downloading the latest Vonter Parquet release and re-running
-`prepare_real_data.py`, or by fetching today's readings from a live
-AQI source (not implemented in this repo).
-- Predictions are next-day only, for the city configured (`--city`, default Kanpur).
-- Accuracy depends heavily on how much historical data you provide — CPCB recommends at least several months for meaningful results.
-- This is an educational project, not an official forecast — always treat the "This is an educational estimate, not an official CPCB forecast" line in the output as literal.
-
-## How AQI is computed
-
-The model's target variable is an AQI category. Real CPCB AQI is the **maximum sub-index across six pollutants** (PM2.5, PM10, NO2, SO2, CO, O3), using a piecewise linear breakpoint table per pollutant.
-
-For this project, AQI is driven by **PM2.5 alone**. This is a deliberate simplification: on high-pollution days in Kanpur, PM2.5 almost always drives the maximum sub-index, so the approximation is close on the days that matter most. The breakpoints match CPCB's published PM2.5 sub-index table:
-
-| PM2.5 (µg/m³) | AQI category   |
-|---------------|----------------|
-| 0–30          | Good           |
-| 31–60         | Satisfactory   |
-| 61–90         | Moderate       |
-| 91–120        | Poor           |
-| 121–250       | Very Poor      |
-| 251+          | Severe         |
-
-Days when PM10 or NO2 spikes without a corresponding PM2.5 spike will be miscategorised by this simplification. A full multi-pollutant implementation would take the maximum sub-index across all six pollutants.
+Or just run the synthetic demo:
+`python generate_sample_data.py`
+`python classifier.py sample_kanpur_synthetic.csv`
