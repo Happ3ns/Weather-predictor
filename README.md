@@ -12,51 +12,101 @@ Severe).
 ## Architecture
 
 ```mermaid
-flowchart TD
-    subgraph SOURCES["Data Sources"]
-        A1[Vonter India CPCB Archive<br/>761 MB Parquet file]
-        A2[generate_sample_data.py<br/>Synthetic demo data]
+flowchart LR
+    %% ---------- Styling ----------
+    classDef source  fill:#eef4f0,stroke:#2f6f4e,stroke-width:1.5px,color:#18181b
+    classDef process fill:#f5f5f5,stroke:#52525b,stroke-width:1px,color:#18181b
+    classDef store   fill:#fdf6e3,stroke:#a16207,stroke-width:1.5px,color:#18181b
+    classDef model   fill:#eff4fb,stroke:#1d4ed8,stroke-width:1.5px,color:#18181b
+    classDef eval    fill:#f4effb,stroke:#7c3aed,stroke-width:1.5px,color:#18181b
+    classDef artifact fill:#f0f0f5,stroke:#52525b,stroke-width:1px,color:#18181b
+
+    %% ---------- Layer 1: Sources ----------
+    subgraph L1["1 · Data Sources"]
+        direction TB
+        S1["Vonter CPCB Archive<br/><i>761 MB Parquet, 2025</i>"]
+        S2["Synthetic Generator<br/><i>generate_sample_data.py</i>"]
     end
 
-    subgraph PREP["Data Preparation — prepare_real_data.py"]
-        B1[Filter for Kanpur stations]
-        B2[Aggregate 15-min → daily averages]
-        B3[Compute AQI from PM2.5<br/>using CPCB breakpoints]
-        B4[(kanpur_real.csv<br/>365 daily rows)]
+    %% ---------- Layer 2: Preparation ----------
+    subgraph L2["2 · Data Preparation — prepare_real_data.py"]
+        direction TB
+        P1["Filter for Kanpur<br/>stations"]
+        P2["Aggregate 15-min<br/>→ daily means"]
+        P3["Compute AQI from PM2.5<br/>CPCB piecewise breakpoints"]
     end
 
-    subgraph FEATURES["Feature Engineering"]
-        C1[Pollutant features<br/>PM2.5, PM10, NO2, SO2, CO, O3]
-        C2[Weather features<br/>Temperature, Humidity, Wind Speed]
-        C3[Cyclical season encoding<br/>sin/cos of day-of-year]
-        C4[Today's AQI]
+    %% ---------- Layer 3: Features ----------
+    subgraph L3["3 · Feature Engineering"]
+        direction TB
+        F1["Pollutants<br/>PM2.5 · PM10 · NO2 · SO2 · CO · O3"]
+        F2["Weather<br/>Temperature · Humidity · Wind"]
+        F3["Season Encoding<br/>sin/cos of day-of-year"]
+        F4["Today's AQI"]
     end
 
-    subgraph MODEL["Model — classifier.py"]
-        D1[Chronological train/test split<br/>80/20]
-        D2[SimpleImputer<br/>median strategy]
-        D3[RandomForestClassifier<br/>300 estimators<br/>class-balanced]
-        D4[Persistence baseline<br/>tomorrow = today]
+    %% ---------- Layer 4: Model ----------
+    subgraph L4["4 · Training — classifier.py"]
+        direction TB
+        M1["Chronological Split<br/>80% train · 20% test"]
+        M2["SimpleImputer<br/>median strategy"]
+        M3["RandomForestClassifier<br/>300 estimators · class-balanced"]
+        M4["Persistence Baseline<br/>tomorrow = today"]
     end
 
-    subgraph OUTPUT["Outputs"]
-        E1[Accuracy report]
-        E2[Classification report]
-        E3[feature_importance.png]
-        E4[confusion_matrix.png]
-        E5[Next-day AQI prediction]
+    %% ---------- Layer 5: Evaluation ----------
+    subgraph L5["5 · Evaluation"]
+        direction TB
+        E1["Accuracy vs. baseline"]
+        E2["Classification report"]
+        E3["Feature importance plot"]
+        E4["Confusion matrix plot"]
     end
 
-    A1 --> B1
-    A2 --> B4
-    B1 --> B2 --> B3 --> B4
-    B4 --> C1 & C2 & C3 & C4
-    C1 & C2 & C3 & C4 --> D1
-    D1 --> D2 --> D3
-    D1 --> D4
-    D3 --> E1 & E2 & E3 & E4 & E5
-    D4 --> E1
+    %% ---------- Layer 6: Artifacts ----------
+    subgraph L6["6 · Outputs"]
+        direction TB
+        O1["output/feature_importance.png"]
+        O2["output/confusion_matrix.png"]
+        O3["Next-day AQI prediction"]
+    end
+
+    %% ---------- Storage ----------
+    DB[("kanpur_real.csv<br/>365 daily rows")]:::store
+
+    %% ---------- Edges ----------
+    S1 --> P1
+    S2 -.-> DB
+    P1 --> P2 --> P3 --> DB
+    DB --> F1
+    DB --> F2
+    DB --> F3
+    DB --> F4
+    F1 --> M1
+    F2 --> M1
+    F3 --> M1
+    F4 --> M1
+    M1 --> M2 --> M3
+    M1 --> M4
+    M3 --> E1
+    M3 --> E2
+    M3 --> E3
+    M3 --> E4
+    M4 --> E1
+    E3 --> O1
+    E4 --> O2
+    M3 --> O3
+
+    %% ---------- Apply classes ----------
+    class S1,S2 source
+    class P1,P2,P3 process
+    class F1,F2,F3,F4 process
+    class M1,M2,M3 model
+    class M4 eval
+    class E1,E2,E3,E4 eval
+    class O1,O2,O3 artifact
 ```
+
 ## Results
 
 - Model accuracy: 67.1%
