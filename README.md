@@ -152,6 +152,19 @@ Two reasons I figured out while building this:
 3. Run `python prepare_real_data.py` to create `kanpur_real.csv`
 4. Run `python classifier.py kanpur_real.csv`
 
+ ## Future work
+
+- **Add weather forecast features.** Tomorrow's wind speed and direction
+  matter enormously for AQI, and right now the model only sees today's
+  weather.
+- **Try a time-series model.** Random Forest treats each day as independent.
+  An LSTM or ARIMA would use the autocorrelation that's clearly present in
+  the data.
+- **Predict the AQI value, not the category.** Converting a continuous
+  number to a category discards information.
+- **Implement the full six-pollutant sub-index.** The current AQI is
+  PM2.5-only, which misses days when PM10 or NO2 drives the index.
+
 Or just run the synthetic demo:
 `python generate_sample_data.py`
 `python classifier.py sample_kanpur_synthetic.csv`
