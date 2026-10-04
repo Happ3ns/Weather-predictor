@@ -9,6 +9,54 @@ Trains a Random Forest classifier on real CPCB data from Kanpur stations.
 Predicts tomorrow's AQI category (Good, Satisfactory, Moderate, Poor, Very Poor, 
 Severe).
 
+## Architecture
+
+```mermaid
+flowchart TD
+    subgraph SOURCES["Data Sources"]
+        A1[Vonter India CPCB Archive<br/>761 MB Parquet file]
+        A2[generate_sample_data.py<br/>Synthetic demo data]
+    end
+
+    subgraph PREP["Data Preparation — prepare_real_data.py"]
+        B1[Filter for Kanpur stations]
+        B2[Aggregate 15-min → daily averages]
+        B3[Compute AQI from PM2.5<br/>using CPCB breakpoints]
+        B4[(kanpur_real.csv<br/>365 daily rows)]
+    end
+
+    subgraph FEATURES["Feature Engineering"]
+        C1[Pollutant features<br/>PM2.5, PM10, NO2, SO2, CO, O3]
+        C2[Weather features<br/>Temperature, Humidity, Wind Speed]
+        C3[Cyclical season encoding<br/>sin/cos of day-of-year]
+        C4[Today's AQI]
+    end
+
+    subgraph MODEL["Model — classifier.py"]
+        D1[Chronological train/test split<br/>80/20]
+        D2[SimpleImputer<br/>median strategy]
+        D3[RandomForestClassifier<br/>300 estimators<br/>class-balanced]
+        D4[Persistence baseline<br/>tomorrow = today]
+    end
+
+    subgraph OUTPUT["Outputs"]
+        E1[Accuracy report]
+        E2[Classification report]
+        E3[feature_importance.png]
+        E4[confusion_matrix.png]
+        E5[Next-day AQI prediction]
+    end
+
+    A1 --> B1
+    A2 --> B4
+    B1 --> B2 --> B3 --> B4
+    B4 --> C1 & C2 & C3 & C4
+    C1 & C2 & C3 & C4 --> D1
+    D1 --> D2 --> D3
+    D1 --> D4
+    D3 --> E1 & E2 & E3 & E4 & E5
+    D4 --> E1
+```
 ## Results
 
 - Model accuracy: 67.1%
