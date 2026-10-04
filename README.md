@@ -114,6 +114,20 @@ flowchart LR
 
 So it beats the dumb guess by about 5 points. Not amazing. I'll explain why below.
 
+## Known limitation: AQI formula
+
+This project computes AQI from PM2.5 using the official CPCB piecewise
+breakpoint formula (see `prepare_real_data.py`). Real CPCB AQI takes the
+**maximum sub-index across six pollutants** — PM2.5, PM10, NO2, SO2, CO,
+and O3 — not PM2.5 alone.
+
+On most high-pollution days in Kanpur, PM2.5 drives the maximum sub-index,
+so this simplification is close. But days when PM10 or NO2 spike without
+a corresponding PM2.5 spike will be miscategorised.
+
+**What I'd do next:** implement the full six-pollutant sub-index
+calculation and take the maximum.
+
 ## Why the accuracy is low
 
 Two reasons I figured out while building this:
