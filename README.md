@@ -139,32 +139,36 @@ Two reasons I figured out while building this:
 2. **The model only sees today's weather.** Tomorrow's wind speed and direction 
    matter a lot for AQI, but I don't have those as inputs. Adding them would probably help.
 
-## What I'd do differently
-
-- Add weather forecast features
-- Try an LSTM or ARIMA instead of a classifier
-- Predict the AQI number, not the category
-
 ## How to run it
 
-1. Install dependencies: `pip install -r requirements.txt`
-2. Download the Vonter Parquet file (see DATA.md)
-3. Run `python prepare_real_data.py` to create `kanpur_real.csv`
-4. Run `python classifier.py kanpur_real.csv`
+### Quickstart (Synthetic Demo)
 
- ## Future work
+```bash
+pip install -r requirements.txt
+python generate_sample_data.py
+python classifier.py sample_kanpur_synthetic.csv
+```
+
+### Full Pipeline with Real CPCB Data
+
+```bash
+pip install -r requirements.txt
+# 1. Download the Vonter Parquet file (see DATA.md)
+# 2. Extract Kanpur stations and compute official piecewise AQI
+python prepare_real_data.py
+# 3. Train Random Forest model and evaluate
+python classifier.py kanpur_real.csv
+```
+
+## Future Work & Next Steps
 
 - **Add weather forecast features.** Tomorrow's wind speed and direction
   matter enormously for AQI, and right now the model only sees today's
   weather.
 - **Try a time-series model.** Random Forest treats each day as independent.
-  An LSTM or ARIMA would use the autocorrelation that's clearly present in
-  the data.
-- **Predict the AQI value, not the category.** Converting a continuous
-  number to a category discards information.
+  An LSTM or ARIMA would capture the temporal autocorrelation present in
+  atmospheric data.
+- **Predict the continuous AQI value, not the category.** Converting a continuous
+  number to a category discards information and fine-grained gradient signal.
 - **Implement the full six-pollutant sub-index.** The current AQI is
   PM2.5-only, which misses days when PM10 or NO2 drives the index.
-
-Or just run the synthetic demo:
-`python generate_sample_data.py`
-`python classifier.py sample_kanpur_synthetic.csv`
