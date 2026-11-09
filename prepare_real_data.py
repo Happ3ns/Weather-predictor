@@ -1,6 +1,3 @@
-
-
-
 import pyarrow.dataset as ds
 import pyarrow.compute as pc
 import pandas as pd
@@ -89,4 +86,3 @@ output = daily[final_cols].dropna(subset=["From Date", "AQI"])
 output.to_csv("kanpur_real.csv", index=False)
 print(f"Saved {len(output)} daily rows to kanpur_real.csv")
 print(output.head())
-'@ | Set-Content -Encoding UTF8 prepare_real_data.py

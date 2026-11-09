@@ -141,7 +141,19 @@ Two reasons I figured out while building this:
 
 ## How to run it
 
-### Quickstart (Synthetic Demo)
+### 1. Single-Day Interactive Predictor & Health Advisory
+
+Predict tomorrow's AQI category for Kanpur directly from today's readings with official CPCB sub-index calculations:
+
+```bash
+# Pass observed numbers:
+python predict_today.py --pm25 140 --pm10 220 --temp 25 --humidity 60 --wind 2.0
+
+# Or launch interactive questionnaire:
+python predict_today.py --interactive
+```
+
+### 2. Quickstart (Synthetic Demo)
 
 ```bash
 pip install -r requirements.txt
@@ -149,7 +161,7 @@ python generate_sample_data.py
 python classifier.py sample_kanpur_synthetic.csv
 ```
 
-### Full Pipeline with Real CPCB Data
+### 3. Full Pipeline with Real CPCB Data
 
 ```bash
 pip install -r requirements.txt
